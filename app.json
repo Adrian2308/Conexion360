@@ -3,46 +3,42 @@
     "name": "Conexion360",
     "slug": "Conexion360",
     "version": "1.0.0",
-    "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
     "scheme": "conexion360",
-    "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
-    "ios": {
-      "supportsTablet": true
-    },
+    "deeplinks": ["conexion360://auth-callback"],
     "android": {
-      "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
-      },
-      "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "data": [{ "scheme": "conexion360", "host": "auth-callback" }],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ],
+      "package": "com.jcarrillo.Conexion360"
     },
     "plugins": [
-      "expo-router",
+      [
+        "expo-router",
+        {
+          "origin": "conexion360://"
+        }
+      ],
       [
         "expo-splash-screen",
         {
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200,
           "resizeMode": "contain",
-          "backgroundColor": "#ffffff",
-          "dark": {
-            "backgroundColor": "#000000"
-          }
+          "backgroundColor": "#ffffff"
         }
       ]
     ],
-    "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+    "extra": {
+      "router": {
+        "origin": "conexion360://"
+      },
+      "eas": {
+        "projectId": "e1019663-1208-4a8a-b6ff-1b644b527390"
+      }
     }
   }
 }

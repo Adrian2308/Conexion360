@@ -1,36 +1,50 @@
+import { decode } from 'base64-arraybuffer';
+import * as FileSystem from 'expo-file-system/legacy';
 import * as ImagePicker from 'expo-image-picker';
+import { Platform } from 'react-native';
 import { supabase } from '../supabaseClient';
 
-// seleccionar y subir imagen
 export async function pickAndUploadImage() {
-  const res = await ImagePicker.launchImageLibraryAsync({
+  // Seleccionar imagen
+  const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    allowsEditing: true,
     quality: 0.7,
+    base64: Platform.OS === 'web', // solo web necesita base64
   });
 
-  // En versiones recientes de Expo, la propiedad es 'canceled' (no 'cancelled')
-  if (res.canceled) return null;
+  if (result.canceled) return null;
 
-  // obtener URI de la imagen seleccionada
-  const asset = res.assets[0];
-  const response = await fetch(asset.uri);
-  const blob = await response.blob();
+  let fileUri;
+  let fileBuffer;
 
-  const fileName = `${Date.now()}.jpg`;
+  if (Platform.OS === 'web') {
+    // Web: usar base64 directamente
+    const base64 = result.assets[0].base64;
+    fileBuffer = decode(base64);
+    fileUri = `${Date.now()}.jpg`;
+  } else {
+    // Móvil: usar FileSystem
+    fileUri = result.assets[0].uri;
+    const base64 = await FileSystem.readAsStringAsync(fileUri, { encoding: 'base64' });
+    fileBuffer = decode(base64);
+    fileUri = `${Date.now()}.jpg`;
+  }
 
+  // Subir a Supabase Storage
   const { data, error } = await supabase.storage
     .from('avatars')
-    .upload(fileName, blob, { upsert: false });
+    .upload(fileUri, fileBuffer, {
+      contentType: 'image/jpeg',
+      upsert: false,
+    });
 
   if (error) {
     console.error('Upload error', error);
     return null;
   }
 
-  // obtener URL pública (si el bucket es público)
-  const {
-    data: { publicUrl },
-  } = supabase.storage.from('avatars').getPublicUrl(data.path);
-
-  return publicUrl;
+  // Obtener URL pública
+  const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(data.path);
+  return publicData.publicUrl;
 }
